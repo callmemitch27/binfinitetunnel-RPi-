@@ -1,8 +1,19 @@
 #!/bin/bash
 
+# Check and upgrade Go to 1.23+
+GO_VERSION=$(go version | cut -d' ' -f3 | sed 's/go//g' | cut -d. -f1)
+if [ "$GO_VERSION" -lt 1.21 ]; then
+  echo "Upgrading Go to 1.23..."
+  sudo apt remove golang-go -y
+  wget https://go.dev/dl/go1.23.0.linux-arm64.tar.gz
+  sudo tar -C /usr/local -xzf go1.23.0.linux-arm64.tar.gz
+  rm go1.23.0.linux-arm64.tar.gz
+  echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+  source ~/.bashrc
+  go version
+fi
+
 # Install dependencies and build
-sudo apt update
-sudo apt install golang-go -y
 go mod init binfinite-rpi
 go get golang.org/x/sys/unix@latest
 go mod tidy
@@ -23,7 +34,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/binfinite-rpi \\
-  --iface=wlan0 \\
+  --iface=eth0 \\
   --log
 Restart=always
 RestartSec=5
