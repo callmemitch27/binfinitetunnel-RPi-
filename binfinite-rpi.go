@@ -44,26 +44,23 @@ func mustIPv4(s string) net.IP {
 }
 
 func fetchServers() ([]Server, error) {
-	if *staticJSON != "" {
-		var s []Server
-		if err := json.Unmarshal([]byte(*staticJSON), &s); err != nil {
-			return nil, fmt.Errorf("parse --static: %w", err)
+	data, err := os.ReadFile("servers.json")
+	if err != nil {
+		log.Printf("read servers.json: %v (falling back to master)", err)
+		client := &http.Client{Timeout: httpTimeout}
+		resp, err := client.Get(*masterURL)
+		if err != nil {
+			return nil, fmt.Errorf("master get: %w", err)
 		}
-		return s, nil
-	}
-	client := &http.Client{Timeout: httpTimeout}
-	resp, err := client.Get(*masterURL)
-	if err != nil {
-		return nil, fmt.Errorf("master get: %w", err)
-	}
-	defer resp.Body.Close()
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read master: %w", err)
+		defer resp.Body.Close()
+		data, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("read master: %w", err)
+		}
 	}
 	var out []Server
-	if err := json.Unmarshal(b, &out); err != nil {
-		return nil, fmt.Errorf("unmarshal master: %w", err)
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, fmt.Errorf("unmarshal servers: %w", err)
 	}
 	return out, nil
 }
@@ -91,7 +88,7 @@ func buildServerPacket(name string) []byte {
 }
 
 func encryptPayload(plain []byte) []byte {
-	key := []byte{0x2C, 0x0A, 0xA3, 0xD0, 0xAB, 0xB8, 0xEF, 0x33, 0x83, 0x35, 0x04, 0x02, 0xDC, 0x32, 0x8C, 0xA5}
+	key := []byte{0x2C, 0xA, 0xA3, 0xD0, 0xAB, 0xB8, 0xEF, 0x33, 0x83, 0x35, 0x4, 0x2, 0xDC, 0x32, 0x8C, 0xA5}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		panic(err)
@@ -105,7 +102,7 @@ func encryptPayload(plain []byte) []byte {
 		panic(err)
 	}
 	enc := gcm.Seal(nil, nonce, plain, nil)
-	out := append(nonce, 0xFF, 0x03, 0x43, 0x00)
+	out := append(nonce, 0xFF, 0x3, 0x43, 0x0)
 	out = append(out, enc[len(enc)-16:]...)
 	out = append(out, enc[:len(enc)-16]...)
 	return out
@@ -277,7 +274,7 @@ func main() {
 			if err != nil {
 				log.Printf("refresh servers: %v", err)
 			} else {
-				log.Printf("Refreshed %d servers from master", len(masterList))
+				log.Printf("Refreshed %d servers from static or master", len(masterList))
 			}
 
 		case <-tick.C:
