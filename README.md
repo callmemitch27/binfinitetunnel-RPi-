@@ -6,7 +6,7 @@ go get golang.org/x/sys/unix@latest
 
 go mod tidy
 
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o binfinitetunnel binfinitetunnel.go
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o binfinite-rpi binfinite-rpi.go
 
 **Deploy on the Pi:**
 
