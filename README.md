@@ -1,4 +1,4 @@
-Build (Mac → Pi/arm64):
+Build (Mac → Pi):
 
 go mod init binfinite-rpi
 go get golang.org/x/sys/unix@latest
