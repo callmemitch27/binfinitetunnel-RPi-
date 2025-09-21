@@ -12,7 +12,7 @@ This is a Linux/Raspberry Pi emulation of the original [binfinitetunnel](https:/
    
 git clone https://github.com/callmemitch27/binfinitetunnel-rpi.git
 
-cd binfinitetunnel-pi
+cd binfinitetunnel-rpi-
 
 2. Run the install script (installs Go, builds, sets up service):
 
